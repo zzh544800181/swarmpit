@@ -165,9 +165,10 @@
               200)))))
 
 (defn- load-compose! [source compose]
-  (when-let [editor (state/get-value (conj state/form-state-cursor :editor))]
-    (when (some? compose)
-      (state/update-value [:source] source state/form-state-cursor)
+  (when (some? compose)
+    (state/update-value [:source] source state/form-state-cursor)
+    (state/update-value [:spec :compose] compose state/form-value-cursor)
+    (when-let [editor (state/get-value (conj state/form-state-cursor :editor))]
       (.setValue editor compose))))
 
 (defn- load-history-entry! [idx history]
@@ -265,7 +266,9 @@
     {:state      [:loading?]
      :on-success (fn [{:keys [response origin?]}]
                    (when origin?
-                     (state/set-value response state/form-value-cursor)
+                     (when (and (= :stack-compose (:source (state/get-value state/form-state-cursor)))
+                                (not (:user-edited? (state/get-value state/form-state-cursor))))
+                       (state/set-value response state/form-value-cursor))
                      (state/update-value [:source-compose] (get-in response [:spec :compose]) state/form-state-cursor)
                      (state/update-value [:baseline]
                                          (get-in response [:spec :compose])
@@ -279,10 +282,14 @@
        (.setOption editor "gutters" #js ["CodeMirror-lint-markers" "cm-diff-gutter"])
        (state/update-value [:editor] editor state/form-state-cursor)
        (.on editor "change"
-            (fn [cm]
+            (fn [cm change]
+              (when (= "+input" (.-origin change))
+                (state/update-value [:user-edited?] true state/form-state-cursor))
               (aset cm "__diffLast" nil)
               (state/update-value [:spec :compose] (-> cm .getValue) state/form-value-cursor)
               (refresh-diff!)))
+       (when-let [initial (get-in (state/get-value state/form-value-cursor) [:spec :compose])]
+         (.setValue editor initial))
        (refresh-diff!)
        (assoc state ::editor editor)))
    :will-unmount
@@ -298,7 +305,12 @@
     (routes/path-for-backend :stack-file {:name name})
     {:on-success (fn [{:keys [response origin?]}]
                    (when origin?
-                     (when (:spec response) (state/update-value [:last?] true state/form-state-cursor))
+                     (when-let [compose (get-in response [:spec :compose])]
+                       (state/update-value [:last?] true state/form-state-cursor)
+                       (when (and (= :stack-compose (:source (state/get-value state/form-state-cursor)))
+                                  (not (:user-edited? (state/get-value state/form-state-cursor))))
+                         (state/update-value [:spec :compose] compose state/form-value-cursor)
+                         (load-compose! :stack-last compose)))
                      (when (:previousSpec response) (state/update-value [:previous?] true state/form-state-cursor))))
      :on-error   (fn [{:keys [origin?]}]
                    (when origin?

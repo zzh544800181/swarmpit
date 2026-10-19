@@ -67,7 +67,12 @@
   [stack-name service]
   {(keyword (alias :serviceName (or stack-name (:stack service)) service))
    (ordered-map
-     :image (-> service :repository :image)
+     ;; Docker resolves tag references to a digest in ContainerSpec.Image. Keep it
+     ;; when rebuilding a stack; dropping it may silently deploy a moving tag.
+     :image (let [{:keys [image imageDigest]} (:repository service)]
+              (if (and (seq imageDigest) (not (re-find #"@" (or image ""))))
+                (str image "@" imageDigest)
+                image))
      :entrypoint (some->> service :entrypoint)
      :command (some->> service :command)
      :hostname (-> service :hostname)
@@ -107,7 +112,19 @@
                                                  :target (:containerPath m))
                               (:readOnly m) (assoc :read_only true))
                             (str (alias :host stack-name m) ":" (:containerPath m) (when (:readOnly m) ":ro"))))))
-     :networks (->> service :networks (map #(alias :networkName stack-name %)))
+     :networks (let [networks (->> service :networks
+                                   (map (fn [net]
+                                          [(alias :networkName stack-name net)
+                                           (:serviceAliases net)]))
+                                   (vec))]
+                 (if (some (comp seq second) networks)
+                   (into (ordered-map)
+                         (map (fn [[name aliases]]
+                                [(keyword name) (if (seq aliases)
+                                                  {:aliases (vec aliases)}
+                                                  {})]))
+                         networks)
+                   (mapv first networks)))
      :secrets (->> service :secrets (targetable :secretName :secretTarget))
      :configs (->> service :configs (targetable :configName :configTarget))
      :logging {:driver  (-> service :logdriver :name)

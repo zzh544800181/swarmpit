@@ -193,7 +193,6 @@
       :name    "Pin"})
    {:onClick  #(dispatch! (routes/path-for-frontend :service-edit {:id service-id}))
     :icon     (comp/svg icon/edit-path)
-    :disabled (true? (:immutable service))
     :main     true
     :group    true
     :name     "Edit"}

@@ -157,6 +157,24 @@
     (is (nil? (:timeout r)))
     (is (nil? (:start_period r)))))
 
+(deftest stack-compose-preserves-resolved-image-digest
+  (let [digest (str "sha256:" (apply str (repeat 64 "a")))
+        r (rendered {:repository {:image "registry.example.org/web:prod"
+                                  :imageDigest digest}})]
+    (is (= (str "registry.example.org/web:prod@" digest) (:image r)))))
+
+(deftest stack-compose-preserves-service-network-aliases
+  (let [r (-> (service "mystack"
+                        (svc {:serviceName "mystack_web"
+                              :stack "mystack"
+                              :networks [{:networkName "mystack_default"
+                                          :serviceAliases ["server" "huibaiyan"]}
+                                         {:networkName "mystack_external"}]}))
+              :web)]
+    (is (= {:aliases ["server" "huibaiyan"]}
+           (get-in r [:networks :mystack_default])))
+    (is (= {} (get-in r [:networks :mystack_external])))))
+
 (deftest healthcheck-keeps-compose-key-names
   (let [r (:healthcheck (rendered {:healthcheck {:startPeriod 10}}))]
     (is (= "10s" (:start_period r)))

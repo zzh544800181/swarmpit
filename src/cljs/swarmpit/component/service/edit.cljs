@@ -63,6 +63,7 @@
      :on-success
             (fn [{:keys [response]}]
               (settings/tags-handler (-> response :repository :name))
+              (state/update-value [:stack-managed?] (true? (:immutable response)) state/form-state-cursor)
               (state/set-value (select-keys response general-keys) settings/form-value-cursor)
               (state/set-value (-> (:ports response) (state/assoc-keys)) ports/form-value-cursor)
               (state/set-value (-> (:mounts response) (state/assoc-keys)) mounts/form-value-cursor)
@@ -92,7 +93,9 @@
 
 (defn- update-service-handler
   [service-id]
-  (let [settings (state/get-value settings/form-value-cursor)
+  (when (or (not (state/get-value (conj state/form-state-cursor :stack-managed?)))
+            (js/confirm "This service belongs to a stack. Editing it directly will diverge from the stack Compose file; a later stack deploy may overwrite these changes. Continue? / 此服务属于 Stack。单独编辑会与 Compose 文件产生偏差，后续部署 Stack 可能覆盖修改。是否继续？"))
+    (let [settings (state/get-value settings/form-value-cursor)
         ports (state/get-value ports/form-value-cursor)
         networks (state/get-value networks/form-value-cursor)
         secrets (state/get-value secrets/form-value-cursor)
@@ -127,7 +130,7 @@
                        (str "Service " service-id " has been updated.")))
        :on-error   (fn [{:keys [response]}]
                      (message/error
-                       (str "Service update failed. " (:error response))))})))
+                       (str "Service update failed. " (:error response))))}))))
 
 (defn- init-form-state
   []
