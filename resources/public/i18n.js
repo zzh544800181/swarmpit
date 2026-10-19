@@ -28,6 +28,8 @@
     };
     function translatedText(text) {
         if (Object.prototype.hasOwnProperty.call(zh, text)) return zh[text];
+        // Text nodes are trimmed by updateText; keep their original trailing space outside the translation.
+        if (Object.prototype.hasOwnProperty.call(zh, text + ' ')) return zh[text + ' '].trimEnd();
         for (var prefix in prefixes) {
             if (Object.prototype.hasOwnProperty.call(prefixes, prefix) && text.indexOf(prefix) === 0 && text.length > prefix.length) return prefixes[prefix] + text.slice(prefix.length);
         }
