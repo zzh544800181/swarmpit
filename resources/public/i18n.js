@@ -18,7 +18,13 @@
         'We strongly recommned you to use ':'强烈建议使用 ','We strongly recommned you to set ':'强烈建议设置 ',
         'Please enter your gitlab username and personal access token with API scope. See ':'请输入 GitLab 用户名和具有 API 权限的个人访问令牌。参见 ',
         "If you're using self hosted Gitlab enter corresponding registry & gitlab url.":'如果使用自托管 GitLab，请填写对应的镜像仓库和 GitLab 地址。',
-        'No secrets found. Create new ':'未找到密钥，请新建 '
+        'No secrets found. Create new ':'未找到密钥，请新建 ',
+        'Version: ':'版本：','Authenticated with service principal ':'已通过服务主体认证：','Authenticated with IAM user ':'已通过 IAM 用户认证：',
+        'Registry URL is not suffixed with ':'镜像仓库地址未以 ','api path, instead given value is used as based url':'API 路径结尾，将直接使用所填地址作为基础地址',
+        'Registry URL is not suffixed with /v2/ api path, instead given value is used as based url':'镜像仓库地址未以 /v2/ API 路径结尾，将直接使用所填地址作为基础地址',
+        'There are no Configs configured.':'尚未配置任何配置项。','There are no Networks configured.':'尚未配置任何网络。','There are no Registries configured.':'尚未配置任何镜像仓库。',
+        'There are no Secrets configured.':'尚未配置任何密钥。','There are no Services configured.':'尚未配置任何服务。','There are no Stacks configured.':'尚未配置任何堆栈。',
+        'There are no Tasks configured.':'尚未配置任何任务。','There are no Users configured.':'尚未配置任何用户。','There are no Volumes configured.':'尚未配置任何数据卷。'
     };
     // Only these explicit UI message prefixes may precede dynamic names or server errors.
     var prefixes = {
